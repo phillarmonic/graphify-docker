@@ -1,5 +1,23 @@
 # Development & publishing
 
+## Task runner (drun)
+
+Common workflows are defined in `.drun/spec.drun` and run with
+[xdrun](https://github.com/phillarmonic/drun):
+
+```bash
+xdrun build                 # build phillarmonic/graphify-docker:local
+xdrun build version=1.2.3   # pin a graphifyy release
+xdrun build-multiarch       # amd64 + arm64 via buildx
+xdrun smoke                 # verify CLI, user, and graph build
+xdrun serve                 # run the MCP server on :8080
+xdrun shell                 # bash shell inside the container
+xdrun docs                  # serve this site with live reload
+xdrun docs-build            # strict docs build (same as CI)
+xdrun up / xdrun down       # docker compose lifecycle
+xdrun release version=1.2.3 # tag a release; CI pushes to Docker Hub
+```
+
 ## Build locally
 
 ```bash
