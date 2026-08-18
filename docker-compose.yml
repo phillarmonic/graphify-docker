@@ -1,0 +1,18 @@
+services:
+  graphify-mcp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: phillarmonic/graphify-docker:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      # graphify output lives here; graph.json is mounted, never baked in
+      - ./graphify-out:/data
+    environment:
+      # Require an API key when binding beyond localhost
+      GRAPHIFY_API_KEY: ${GRAPHIFY_API_KEY:-}
+      # LLM backend keys, picked up by graphify at runtime
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped

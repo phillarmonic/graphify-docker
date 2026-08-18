@@ -1,173 +1,62 @@
----
-icon: lucide/rocket
----
+# graphify-docker
 
-# Get started
+A Docker image for [graphify](https://github.com/phillarmonic/graphify) and its
+MCP server, built on [uv](https://docs.astral.sh/uv/) and published to Docker
+Hub as **`phillarmonic/graphify-docker`** for `linux/amd64` and `linux/arm64`.
 
-For full documentation visit [zensical.org](https://zensical.org/docs/).
+Unlike the official image (which installs from source with `pip`), this image
+installs the published package with every extra enabled:
 
-## Commands
-
-* [`zensical new`][new] - Create a new project
-* [`zensical serve`][serve] - Start local web server
-* [`zensical build`][build] - Build your site
-
-  [new]: https://zensical.org/docs/usage/new/
-  [serve]: https://zensical.org/docs/usage/preview/
-  [build]: https://zensical.org/docs/usage/build/
-
-## Examples
-
-### Admonitions
-
-> Go to [documentation](https://zensical.org/docs/authoring/admonitions/)
-
-!!! note
-
-    This is a **note** admonition. Use it to provide helpful information.
-
-!!! warning
-
-    This is a **warning** admonition. Be careful!
-
-### Details
-
-> Go to [documentation](https://zensical.org/docs/authoring/admonitions/#collapsible-blocks)
-
-??? info "Click to expand for more info"
-
-    This content is hidden until you click to expand it.
-    Great for FAQs or long explanations.
-
-## Code Blocks
-
-> Go to [documentation](https://zensical.org/docs/authoring/code-blocks/)
-
-``` python hl_lines="2" title="Code blocks"
-def greet(name):
-    print(f"Hello, {name}!") # (1)!
-
-greet("Python")
+```bash
+uv tool install "graphifyy[all]"
 ```
 
-1.  > Go to [documentation](https://zensical.org/docs/authoring/code-blocks/#code-annotations)
+That includes the MCP server with the Streamable HTTP transport, all LLM
+backends (OpenAI, Anthropic, Gemini, DeepSeek, Moonshot, Azure, Ollama,
+Bedrock), document and media extractors (PDF, DOCX, XLSX, audio, YouTube), and
+the Neo4j / FalkorDB exporters.
 
-    Code annotations allow to attach notes to lines of code.
+## Quickstart
 
-Code can also be highlighted inline: `#!python print("Hello, Python!")`.
+```bash
+# Build a graph for your project first (or mount an existing one)
+docker run --rm -v "$(pwd):/work" -w /work \
+  phillarmonic/graphify-docker graphify update .
 
-## Content tabs
-
-> Go to [documentation](https://zensical.org/docs/authoring/content-tabs/)
-
-=== "Python"
-
-    ``` python
-    print("Hello from Python!")
-    ```
-
-=== "Rust"
-
-    ``` rs
-    println!("Hello from Rust!");
-    ```
-
-## Diagrams
-
-> Go to [documentation](https://zensical.org/docs/authoring/diagrams/)
-
-``` mermaid
-graph LR
-  A[Start] --> B{Error?};
-  B -->|Yes| C[Hmm...];
-  C --> D[Debug];
-  D --> B;
-  B ---->|No| E[Yay!];
+# Serve the graph as an MCP server over HTTP on :8080
+docker run -d --name graphify-mcp \
+  -p 8080:8080 \
+  -v "$(pwd)/graphify-out:/data" \
+  -e GRAPHIFY_API_KEY="change-me" \
+  phillarmonic/graphify-docker
 ```
 
-## Footnotes
+The default command mirrors the official image:
 
-> Go to [documentation](https://zensical.org/docs/authoring/footnotes/)
+```text
+/data/graph.json --transport http --host 0.0.0.0 --port 8080
+```
 
-Here's a sentence with a footnote.[^1]
+so with no arguments the container serves `/data/graph.json` over Streamable
+HTTP at `http://localhost:8080/mcp`.
 
-Hover it, to see a tooltip.
+## How it's laid out
 
-[^1]: This is the footnote.
+| Piece | Location |
+|---|---|
+| Dockerfile | `docker/Dockerfile` |
+| Entrypoint | `docker/docker-entrypoint.sh` |
+| Compose example | `docker-compose.yml` |
+| Publish workflow | `.github/workflows/build-push.yml` |
+| Docs workflow | `.github/workflows/docs.yml` |
 
+The image runs as a non-root user (`graphify`, uid 10001), mounts graph data at
+`/data` (`VOLUME`), and never bakes a `graph.json` or any secrets into the
+image — both are supplied at runtime.
 
-## Formatting
+## Next steps
 
-> Go to [documentation](https://zensical.org/docs/authoring/formatting/)
-
-- ==This was marked (highlight)==
-- ^^This was inserted (underline)^^
-- ~~This was deleted (strikethrough)~~
-- H~2~O
-- A^T^A
-- ++ctrl+alt+del++
-
-## Icons, Emojis
-
-> Go to [documentation](https://zensical.org/docs/authoring/icons-emojis/)
-
-* :sparkles: `:sparkles:`
-* :rocket: `:rocket:`
-* :tada: `:tada:`
-* :memo: `:memo:`
-* :eyes: `:eyes:`
-
-## Maths
-
-> Go to [documentation](https://zensical.org/docs/authoring/math/)
-
-$$
-\cos x=\sum_{k=0}^{\infty}\frac{(-1)^k}{(2k)!}x^{2k}
-$$
-
-!!! warning "Needs configuration"
-    Note that MathJax is included via a `script` tag on this page and is not
-    configured in the generated default configuration to avoid including it
-    in a pages that do not need it. See the documentation for details on how
-    to configure it on all your pages if they are more Maths-heavy than these
-    simple starter pages.
-
-<script id="MathJax-script" src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [["\\(", "\\)"]],
-      displayMath: [["\\[", "\\]"]],
-      processEscapes: true,
-      processEnvironments: true
-    },
-    options: {
-      ignoreHtmlClass: ".*|",
-      processHtmlClass: "arithmatex"
-    }
-  };
-
-  document$.subscribe(() => {
-    MathJax.startup.output.clearCache()
-    MathJax.typesetClear()
-    MathJax.texReset()
-    MathJax.typesetPromise()
-  })
-</script>
-
-## Task Lists
-
-> Go to [documentation](https://zensical.org/docs/authoring/lists/#using-task-lists)
-
-* [x] Install Zensical
-* [x] Configure `zensical.toml`
-* [x] Write amazing documentation
-* [ ] Deploy anywhere
-
-## Tooltips
-
-> Go to [documentation](https://zensical.org/docs/authoring/tooltips/)
-
-[Hover me][example]
-
-  [example]: https://example.com "I'm a tooltip!"
+- [Using the MCP server](mcp.md) — HTTP and stdio transports, client configs
+- [Running the CLI](cli.md) — build graphs inside the container
+- [Environment variables](environment-variables.md) — full reference
+- [Development & publishing](development.md) — local builds and releases

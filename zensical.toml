@@ -1,6 +1,6 @@
 [project]
-site_url = "https://www.example.com/"
-site_name = "Documentation"
+site_url = "https://phillarmonic.github.io/graphify-docker/"
+site_name = "graphify-docker"
 # site_description = "Your project description"
 # site_author = "Your name"
 
@@ -12,7 +12,10 @@ site_name = "Documentation"
 
 nav = [
   { "Get started" = "index.md" },
-  { "Markdown in 5min" = "markdown.md" },
+  { "MCP server" = "mcp.md" },
+  { "CLI" = "cli.md" },
+  { "Environment variables" = "environment-variables.md" },
+  { "Development" = "development.md" },
 ]
 
 # extra_css = ["stylesheets/extra.css"]
