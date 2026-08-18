@@ -1,0 +1,68 @@
+# drun (do-run) CLI is a fast, semantic task runner with 
+# its own powerful automation language. Effortless tasks, serious speed.
+# Learn more at https://github.com/phillarmonic/drun
+
+version: 2.0
+
+project "graphify-docker" version "1.0.0":
+    requires tools:
+        docker
+
+task "default" means "Welcome":
+	info "graphify-docker Task Runner 🐳"
+    info "Available tasks: {available tasks(', ')}"
+
+task "build" means "Build the Docker image locally":
+    given $tag defaults to "local"
+    given $version defaults to ""
+    info "Building phillarmonic/graphify-docker:{$tag}..."
+    if $version is "":
+        run "docker build -f docker/Dockerfile -t phillarmonic/graphify-docker:{$tag} ."
+    else:
+        info "Pinning graphifyy=={$version}"
+        run "docker build -f docker/Dockerfile --build-arg GRAPHIFY_VERSION={$version} -t phillarmonic/graphify-docker:{$tag} ."
+    success "Image built: phillarmonic/graphify-docker:{$tag}"
+
+task "build-multiarch" means "Build for linux/amd64 and linux/arm64 (buildx)":
+    given $tag defaults to "local"
+    info "Building multi-arch image phillarmonic/graphify-docker:{$tag}..."
+    run "docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t phillarmonic/graphify-docker:{$tag} ."
+    success "Multi-arch image built."
+
+task "serve" means "Run the MCP server container on :8080":
+    given $tag defaults to "local"
+    given $port defaults to "8080"
+    info "Serving graphify MCP on http://localhost:{$port}/mcp (mounting ./graphify-out at /data)"
+    run "docker run --rm -it -p {$port}:8080 -v \"$(pwd)/graphify-out:/data\" -e GRAPHIFY_API_KEY phillarmonic/graphify-docker:{$tag}" attached
+
+task "shell" means "Open a bash shell inside the container":
+    given $tag defaults to "local"
+    run "docker run --rm -it --entrypoint bash phillarmonic/graphify-docker:{$tag}" attached
+
+task "smoke" mode "ci" means "Smoke test: version, non-root user, and graph build":
+    given $tag defaults to "local"
+    run "docker run --rm phillarmonic/graphify-docker:{$tag} graphify --version"
+    run "docker run --rm phillarmonic/graphify-docker:{$tag} sh -c 'whoami && echo $SHELL'"
+    run "SMOKE_DIR=$(mktemp -d) && mkdir -p \"$SMOKE_DIR/work\" \"$SMOKE_DIR/data\" && printf 'def hello():\n    return \"hi\"\n' > \"$SMOKE_DIR/work/app.py\" && docker run --rm -v \"$SMOKE_DIR/work:/work\" -w /work -v \"$SMOKE_DIR/data:/data\" phillarmonic/graphify-docker:{$tag} graphify update . && test -f \"$SMOKE_DIR/data/graph.json\""
+    success "Smoke test passed: CLI works, graph built into /data."
+
+task "docs" means "Serve the documentation site with live reload":
+    run "uvx zensical serve" attached
+
+task "docs-build" mode "ci" means "Build the documentation site (strict, same as CI)":
+    run "uvx zensical build --clean --strict"
+    success "Docs built into site/ with no warnings."
+
+task "up" means "Start the MCP server with docker compose":
+    run "docker compose up -d"
+    success "MCP server running at http://localhost:8080/mcp"
+
+task "down" means "Stop the docker compose services":
+    run "docker compose down"
+    step "Services stopped."
+
+task "release" means "Tag a release (CI builds and pushes to Docker Hub)":
+    requires $version
+    run "git tag v{$version}"
+    info "Tag v{$version} created. Push it with: git push origin v{$version}"
+    step "The build-push workflow publishes :latest, :{major}, and :{$version} to phillarmonic/graphify-docker."

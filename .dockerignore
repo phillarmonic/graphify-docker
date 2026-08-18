@@ -1,0 +1,10 @@
+.git
+.github
+docs
+site
+graphify-out
+*.md
+!LICENSE
+uv.lock
+pyproject.toml
+main.py
