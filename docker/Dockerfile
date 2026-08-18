@@ -34,7 +34,8 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 COPY --from=builder /opt/uv-tools /opt/uv-tools
 ENV PATH="/opt/uv-tools/bin:$PATH" \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    SHELL=/bin/bash
 
 # Same environment-variable pattern as the official image / graphify itself:
 # - GRAPHIFY_API_KEY      require this key on the HTTP transport (empty = off)
@@ -48,7 +49,8 @@ ENV GRAPHIFY_OUT=/data
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Run as a non-root user — the server is network-exposed.
-RUN useradd --create-home --uid 10001 graphify \
+RUN useradd --create-home --uid 10001 --shell /bin/bash graphify \
+    && chsh -s /bin/bash root \
     && mkdir -p /data && chown graphify:graphify /data
 USER graphify
 
